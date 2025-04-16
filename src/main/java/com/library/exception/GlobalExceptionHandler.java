@@ -38,7 +38,7 @@ public class GlobalExceptionHandler {
 
         log.error("User not found", ex);
 
-        ApiErrorResponse errorResponse = new ApiErrorResponse(HttpStatus.NOT_FOUND.value(), ex.getMessage());
+        final var errorResponse = new ApiErrorResponse(HttpStatus.NOT_FOUND.value(), ex.getMessage());
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
     }
 
@@ -47,7 +47,7 @@ public class GlobalExceptionHandler {
 
         log.error("Book not found", ex);
 
-        ApiErrorResponse errorResponse = new ApiErrorResponse(HttpStatus.NOT_FOUND.value(), ex.getMessage());
+        final var errorResponse = new ApiErrorResponse(HttpStatus.NOT_FOUND.value(), ex.getMessage());
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
     }
 
@@ -56,7 +56,7 @@ public class GlobalExceptionHandler {
 
         log.error("Book already loaned", ex);
 
-        ApiErrorResponse errorResponse = new ApiErrorResponse(HttpStatus.BAD_REQUEST.value(), ex.getMessage());
+        final var errorResponse = new ApiErrorResponse(HttpStatus.BAD_REQUEST.value(), ex.getMessage());
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
     }
 
@@ -74,9 +74,8 @@ public class GlobalExceptionHandler {
 
         log.error("Data integrity violation", ex);
 
-        final var error = new ApiErrorResponse(HttpStatus.CONFLICT.value(), "Data integrity violation");
-
-        return new ResponseEntity<>(error, HttpStatus.CONFLICT);
+        final var errorResponse = new ApiErrorResponse(HttpStatus.CONFLICT.value(), "Data integrity violation");
+        return new ResponseEntity<>(errorResponse, HttpStatus.CONFLICT);
     }
 
     @ExceptionHandler(Exception.class)
@@ -84,10 +83,10 @@ public class GlobalExceptionHandler {
 
         log.error("Unhandled exception occurred", ex);
 
-        final var error = new ApiErrorResponse(
+        final var errorResponse = new ApiErrorResponse(
                 HttpStatus.INTERNAL_SERVER_ERROR.value(),
                 "An unexpected error occurred."
         );
-        return new ResponseEntity<>(error, HttpStatus.INTERNAL_SERVER_ERROR);
+        return new ResponseEntity<>(errorResponse, HttpStatus.INTERNAL_SERVER_ERROR);
     }
 }
