@@ -1,0 +1,21 @@
+spring:
+  application:
+    name: my-library
+
+  jpa:
+    database: postgresql
+    generate-ddl: false
+    hibernate:
+      ddl-auto: none
+  datasource:
+    url: jdbc:postgresql://${POSTGRES_HOST:localhost:5433}/library
+    username: ${POSTGRES_USER:library}
+    password: ${POSTGRES_PASS:library}
+    driver-class-name: org.postgresql.Driver
+  sql:
+    init:
+      platform: postgres
+
+  liquibase:
+    change-log: classpath:db/changelog/changelog-master.xml
+    enabled: true
