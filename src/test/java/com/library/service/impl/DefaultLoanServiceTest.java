@@ -4,6 +4,8 @@ import com.library.exception.BookAlreadyLoanedException;
 import com.library.exception.BookNotFoundException;
 import com.library.exception.LoanNotFoundException;
 import com.library.exception.UserNotFoundException;
+import com.library.mapper.LoanMapper;
+import com.library.mapper.LoanMapperImpl;
 import com.library.repository.BookRepository;
 import com.library.repository.LoanRepository;
 import com.library.repository.UserRepository;
@@ -16,6 +18,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
@@ -40,6 +43,9 @@ class DefaultLoanServiceTest {
 
     @Mock
     private UserRepository userRepository;
+
+    @Spy
+    private LoanMapper loanMapper = new LoanMapperImpl();
 
     @InjectMocks
     private DefaultLoanService defaultLoanService;
@@ -67,7 +73,7 @@ class DefaultLoanServiceTest {
         when(loanRepository.save(loanCaptor.capture())).thenReturn(loan);
         when(bookRepository.save(loanedBookEntity)).thenReturn(bookEntity);
 
-        final var savedLoanDto = defaultLoanService.loanBook(userId, bookId, loanDays);
+        final var savedLoanDto = defaultLoanService.loanBook(bookId, userId, loanDays);
         final var capturedLoanDto = loanCaptor.getValue();
         assertThat(savedLoanDto.loanDate()).isEqualTo(capturedLoanDto.getLoanDate());
         assertThat(savedLoanDto.dueDate()).isEqualTo(capturedLoanDto.getDueDate());
@@ -98,10 +104,14 @@ class DefaultLoanServiceTest {
         final var userId = 10L;
         final var bookId = 100L;
         final var loanDays = 30;
+        final var bookEntity = Instancio.create(BookEntity.class);
+        bookEntity.setIsLoaned(false);
 
+
+        when(bookRepository.findByIdForUpdate(bookId)).thenReturn(bookEntity);
         when(userRepository.findById(userId)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> defaultLoanService.loanBook(userId, bookId, loanDays))
+        assertThatThrownBy(() -> defaultLoanService.loanBook(bookId, userId, loanDays))
                 .isInstanceOf(UserNotFoundException.class)
                 .hasMessageContaining(format("User with id {0} not found", userId));
 
@@ -117,15 +127,14 @@ class DefaultLoanServiceTest {
         final var bookId = 100L;
         final var loanDays = 30;
 
-        when(userRepository.findById(userId)).thenReturn(Optional.of(mock(UserEntity.class)));
-        when(bookRepository.findByIdForUpdate(userId)).thenReturn(null);
+        when(bookRepository.findByIdForUpdate(bookId)).thenReturn(null);
 
-        assertThatThrownBy(() -> defaultLoanService.loanBook(userId, bookId, loanDays))
+        assertThatThrownBy(() -> defaultLoanService.loanBook(bookId, userId, loanDays))
                 .isInstanceOf(BookNotFoundException.class)
                 .hasMessageContaining(format("Book with id {0} not found", bookId));
 
-        verify(userRepository, times(1)).findById(userId);
         verify(bookRepository, times(1)).findByIdForUpdate(bookId);
+        verifyNoInteractions(userRepository);
         verifyNoMoreInteractions(loanRepository);
         verifyNoMoreInteractions(bookRepository);
     }
@@ -137,15 +146,14 @@ class DefaultLoanServiceTest {
         final var bookId = 100L;
         final var loanDays = 30;
 
-        when(userRepository.findById(userId)).thenReturn(Optional.of(mock(UserEntity.class)));
         when(bookRepository.findByIdForUpdate(bookId)).thenReturn(BookEntity.builder().isLoaned(true).build());
 
-        assertThatThrownBy(() -> defaultLoanService.loanBook(userId, bookId, loanDays))
+        assertThatThrownBy(() -> defaultLoanService.loanBook(bookId, userId, loanDays))
                 .isInstanceOf(BookAlreadyLoanedException.class)
                 .hasMessageContaining(format("Book with id {0} is already loaned", bookId));
 
-        verify(userRepository, times(1)).findById(userId);
         verify(bookRepository, times(1)).findByIdForUpdate(bookId);
+        verifyNoInteractions(userRepository);
         verifyNoMoreInteractions(loanRepository);
         verifyNoMoreInteractions(bookRepository);
     }
